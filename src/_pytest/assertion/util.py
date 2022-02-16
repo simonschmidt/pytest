@@ -342,11 +342,18 @@ def _compare_eq_sequence(
                 # b'f'
                 left_value = left[i : i + 1]
                 right_value = right[i : i + 1]
+                drill_down = []
             else:
                 left_value = left[i]
                 right_value = right[i]
+                drill_down = _compare_eq_any(left_value, right_value, verbose)
 
-            explanation += [f"At index {i} diff: {left_value!r} != {right_value!r}"]
+            if drill_down:
+                explanation += [f"At index {i}:"]
+                explanation.extend(f"  {explanation}" for explanation in drill_down)
+            else:
+                explanation += [f"At index {i} diff: {left_value!r} != {right_value!r}"]
+
             break
 
     if comparing_bytes:

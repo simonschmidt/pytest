@@ -758,7 +758,13 @@ class TestApprox:
         expected = "4.0e-06"
         result = pytester.runpytest()
         result.stdout.fnmatch_lines(
-            [f"*At index 0 diff: 3 != 4 ± {expected}", "=* 1 failed in *="]
+            [
+                "*At index 0:",
+                "*comparison failed",
+                "*Obtained: 3",
+                f"*Expected: 4 ± {expected}",
+                "=* 1 failed in *=",
+            ]
         )
 
     @pytest.mark.parametrize(

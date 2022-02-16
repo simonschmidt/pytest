@@ -523,7 +523,9 @@ class TestAssert_reprcompare:
         diff = callequal(l1, l2, verbose=True)
         assert diff == [
             "['aaaaaaaaaaa...cccccccccccc'] == ['bbbbbbbbbbb...aaaaaaaaaaaa']",
-            "At index 0 diff: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' != 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'",
+            "At index 0:",
+            "  - bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "  + aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             "Full diff:",
             "  [",
             "+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',",
@@ -540,7 +542,9 @@ class TestAssert_reprcompare:
         diff = callequal(l1, l2, verbose=True)
         assert diff == [
             "['a', 'aaaaaa...aaaaaaa', ...] == ['should not get wrapped']",
-            "At index 0 diff: 'a' != 'should not get wrapped'",
+            "At index 0:",
+            "  - should not get wrapped",
+            "  + a",
             "Left contains 7 more items, first extra item: 'aaaaaaaaaa'",
             "Full diff:",
             "  [",
@@ -840,6 +844,20 @@ class TestAssert_reprcompare_dataclass:
                 "E             + ten",
                 "E         ",
                 "E         Drill down into differing attribute h:",
+            ],
+            consecutive=True,
+        )
+
+    def test_sequence_dataclasses(self, pytester: Pytester) -> None:
+        p = pytester.copy_example("dataclasses/test_compare_sequence_dataclasses.py")
+        result = pytester.runpytest(p, "-vv")
+        result.assert_outcomes(failed=1, passed=0)
+        result.stdout.fnmatch_lines(
+            [
+                "E*At index 1:",
+                "E*",
+                "E*Differing attributes:",
+                "E*'field_a', 'field_c'*",
             ],
             consecutive=True,
         )
@@ -1336,6 +1354,49 @@ def test_sequence_comparison_uses_repr(pytester: Pytester) -> None:
             "*E*Extra items*right*",
             "*E*'y'*",
         ]
+    )
+
+
+def test_sequence_drill_down(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        def test_hello():
+            x = [1, 2, {"a": 1}]
+            y = [1, 2, {"a": 2}]
+            assert x == y
+    """
+    )
+    result = pytester.runpytest()
+    result.stdout.fnmatch_lines(
+        [
+            "*def test_hello():*",
+            "*assert x == y*",
+            "*E*At index 2:",
+            "*E*Differing items:",
+            "*E*{'a': 1} != {'a': 2}",
+            "*E*Use -v to get more diff",
+            "*E*Use -v to get more diff",
+        ]
+    )
+
+
+def test_sequence_drill_down_int(pytester: Pytester) -> None:
+    pytester.makepyfile(
+        """
+        def test_hello():
+            x = [1, 2, 3]
+            y = [1, 2, 4]
+            assert x == y
+    """
+    )
+    result = pytester.runpytest()
+    result.stdout.fnmatch_lines(
+        [
+            "*def test_hello():*",
+            "*assert x == y*",
+            "*E*At index 2 diff: 3 != 4",
+            "*E*Use -v to get more diff",
+        ],
     )
 
 
